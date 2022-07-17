@@ -10,7 +10,7 @@ public class RedisClient {
         Config config = new Config();
         config.useClusterServers()
                 // use "rediss://" for SSL connection
-                .addNodeAddress("redis://127.0.0.1:7181");
+                .addNodeAddress("redis://127.0.0.1:6379");
         client = Redisson.create(config);
     }
 }
