@@ -8,8 +8,10 @@ import org.json.JSONObject;
 import org.redisson.api.RMap;
 import org.redisson.api.RSet;
 import util.HashUtil;
+import util.RequestBodyUtil;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static constant.Constant.*;
@@ -19,10 +21,17 @@ public class GrantRequestHandler extends AbstractRequestHandler {
 
 
 
-    public Response post(HttpExchange httpExchange) throws NoSuchAlgorithmException {
-        JSONObject request = new JSONObject(httpExchange.getResponseBody().toString());
-        String userName = (String) request.get("userName");
-        String roleName = (String) request.get("roleName");
+    public Response post(HttpExchange httpExchange) {
+        Map<String, Object> requestMap = new JSONObject(RequestBodyUtil.readBody(httpExchange)).toMap();
+        if(!requestMap.containsKey("userName")||!requestMap.containsKey("roleName")){
+            return new Response(
+                    new JSONObject(new ErrorResponse("Invalid request")),
+                    400
+            );
+
+        }
+        String userName = (String) requestMap.get("userName");
+        String roleName = (String) requestMap.get("roleName");
         
 
         RMap<String, String> userMap = RedisClient.client.getMap(USER_MAP_KEY);

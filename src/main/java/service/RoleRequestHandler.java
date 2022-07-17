@@ -8,7 +8,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.redisson.api.RMap;
 import org.redisson.api.RSet;
+import util.RequestBodyUtil;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -19,12 +21,11 @@ import static constant.Constant.*;
 public class RoleRequestHandler extends AbstractRequestHandler {
 
 
-    private static Pattern ALLOWED_ROLE_NAME_CHAR = Pattern.compile("^[a-zA-Z0-9_]*$");
+    private static final Pattern ALLOWED_ROLE_NAME_CHAR = Pattern.compile("^[a-zA-Z0-9_]*$");
 
 
     public Response get(HttpExchange httpExchange){
         String token = null;
-        String userName = null;
         String roleName = null;
 
         String queryString = httpExchange.getRequestURI().getQuery();
@@ -38,9 +39,6 @@ public class RoleRequestHandler extends AbstractRequestHandler {
             String[] split = query.split("=");
             if(split.length==2)
                 switch (split[0]){
-                    case "userName":
-                        userName = split[1];
-                        break;
                     case "roleName":
                         roleName = split[1];
                         break;
@@ -50,7 +48,8 @@ public class RoleRequestHandler extends AbstractRequestHandler {
 
                 }
             }
-        if(!isTokenValid(token, userName)){
+        String userName = getUserName(token);
+        if(Objects.equals(userName, "")){
             return new Response(
                     new JSONObject(new ErrorResponse("Unauthorized")),
                     403
@@ -61,14 +60,9 @@ public class RoleRequestHandler extends AbstractRequestHandler {
             return checkRole(userName, roleName);
         }
     }
-    private boolean isTokenValid(String token, String userName){
-        if(token==null){
-            return false;
-        }
-        else{
+    private String getUserName(String token){
             RMap<String, String> tokenMap = RedisClient.client.getMap(TOKEN_MAP);
-            return tokenMap.containsKey(token) && Objects.equals(tokenMap.get(token), userName);
-        }
+            return tokenMap.getOrDefault(token,"");
     }
     private Response queryAllRoles(String userName){
 
@@ -89,8 +83,14 @@ public class RoleRequestHandler extends AbstractRequestHandler {
 
     }
     public Response post(HttpExchange httpExchange) {
-        JSONObject request = new JSONObject(httpExchange.getResponseBody().toString());
-        String roleName = (String) request.get("roleName");
+        Map<String, Object> requestMap = new JSONObject(RequestBodyUtil.readBody(httpExchange)).toMap();
+        if(!requestMap.containsKey("roleName")){
+            return new Response(
+                    new JSONObject(new ErrorResponse("Invalid request")),
+                    400
+            );
+        }
+        String roleName = (String) requestMap.get("roleName");
 
         RSet<String> roleSet = RedisClient.client.getSet(ROLE_SET_KEY);
         if (roleSet.contains(roleName)) {

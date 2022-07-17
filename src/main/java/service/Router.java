@@ -2,6 +2,7 @@ package service;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import model.ErrorResponse;
 import model.Response;
 import org.json.JSONObject;
 
@@ -18,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Router implements HttpHandler {
-    private static Map<String, Class<? extends AbstractRequestHandler>> routingTable = new HashMap<>();
+    private static final Map<String, Class<? extends AbstractRequestHandler>> routingTable = new HashMap<>();
     static {
         routingTable.put("/auth(\\?.*)?", AuthRequestHandler.class);
         routingTable.put("/grant(\\?.*)?", GrantRequestHandler.class);
@@ -71,12 +72,12 @@ public class Router implements HttpHandler {
 
     private void methodNotSupportedResponse(HttpExchange httpExchange) throws IOException {
         handleResponse(httpExchange,
-                new JSONObject(new Error("Method not supported")).toString(),
+                new JSONObject(new ErrorResponse("Method not supported")).toString(),
                 405);
     }
     private void internalServerErrorResponse(HttpExchange httpExchange) throws IOException {
         handleResponse(httpExchange,
-                new JSONObject(new Error("Internal Server Error")).toString(),
+                new JSONObject(new ErrorResponse("Internal Server Error")).toString(),
                 500);
     }
 }

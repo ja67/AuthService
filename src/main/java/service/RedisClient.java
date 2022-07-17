@@ -8,9 +8,7 @@ public class RedisClient {
     public static RedissonClient client;
     static {
         Config config = new Config();
-        config.useClusterServers()
-                // use "rediss://" for SSL connection
-                .addNodeAddress("redis://127.0.0.1:6379");
+        config.useSingleServer().setAddress("redis://localhost:6379");
         client = Redisson.create(config);
     }
 }
